@@ -29,7 +29,14 @@ class MyHomePage extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           ElevatedButton(
-            onPressed: () => context.read<LocationCubit>().getLocationPermission(),
+            onPressed: () async {
+              LocationCubit cubit = context.read<LocationCubit>();
+              if (cubit.state == null) {
+                await cubit.getLocationPermission();
+              }
+
+              await cubit.startLocationStream();
+            },
             child: const Text('Start location'),
           ),
           const SizedBox(height: 10),
