@@ -1,16 +1,15 @@
 import 'dart:async';
+
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geolocator/geolocator.dart';
 import 'location_repository.dart';
 
-class LocationPresenter {
+class LocationCubit extends Cubit<String?> {
   final LocationRepository _repository = LocationRepository();
-  final StreamController<String?> _locationController =
-      StreamController<String?>();
-
-  Stream<String?> get locationStream => _locationController.stream;
-  StreamSubscription<Position>? positionStreamSubscription;
-
+  StreamSubscription<Position>? _positionStreamSubscription;
   bool isLocationStreamActive = false;
+
+  LocationCubit() : super(null);
 
   Future<void> getLocationPermission() async {
     LocationPermission permission = await Geolocator.checkPermission();
@@ -31,24 +30,26 @@ class LocationPresenter {
   }
 
   void startLocationStream() {
-    positionStreamSubscription =
-        _repository.getPositionStream().listen((Position position) {
+    _positionStreamSubscription?.cancel();
+    _positionStreamSubscription = _repository.getPositionStream().listen((Position position) {
       final latitude = position.latitude.toString();
       final longitude = position.longitude.toString();
-      _locationController.add('Latitude: $latitude, Longitude: $longitude');
+      emit('Latitude: $latitude, Longitude: $longitude');
       print('New Latitude: $latitude, Longitude: $longitude');
     });
     print('Location stream started');
   }
 
   void stopLocationStream() {
-    positionStreamSubscription?.cancel();
+    _positionStreamSubscription?.cancel();
     isLocationStreamActive = false;
-    _locationController.add(null);
+    emit(null);
     print('Location stream stopped');
   }
 
-  void dispose() {
-    _locationController.close();
+  @override
+  Future<void> close() {
+    _positionStreamSubscription?.cancel();
+    return super.close();
   }
 }
